@@ -5,6 +5,17 @@
         {{ status }}
       </div>
     </template>
+    <template #content>
+      <p class="title is-4">{{ item.name }}</p>
+      <p class="subtitle is-6">
+        <template v-if="item.subtitle">
+          {{ item.subtitle }}
+        </template>
+        <template v-else>
+          {{ rttLabel }}
+        </template>
+      </p>
+    </template>
   </Generic>
 </template>
 
@@ -14,27 +25,62 @@ import Generic from "./Generic.vue";
 
 export default {
   name: "Ping",
+  components: {
+    Generic,
+  },
   mixins: [service],
   props: {
     item: Object,
   },
-  components: {
-    Generic,
-  },
   data: () => ({
     status: null,
+    rtt: null,
   }),
+  computed: {
+    rttLabel: function () {
+      if (this.status === "online") {
+        return `${this.rtt}ms`;
+      }
+      return "unavailable";
+    },
+  },
   created() {
+    const updateInterval = parseInt(this.item.updateInterval, 10) || 0;
+    if (updateInterval > 0) {
+      setInterval(this.fetchStatus, updateInterval);
+    }
+
     this.fetchStatus();
   },
   methods: {
     fetchStatus: async function () {
-      this.fetch("/", { method: "HEAD", cache: "no-cache" }, false)
+      const method =
+        typeof this.item.method === "string"
+          ? this.item.method.toUpperCase()
+          : "HEAD";
+
+      if (!["GET", "HEAD", "OPTION"].includes(method)) {
+        console.error(`Ping: ${method} is not a supported HTTP method`);
+        return;
+      }
+
+      const startTime = performance.now();
+      const timeout = parseInt(this.item.timeout, 10) || 2000;
+      const params = {
+        method,
+        cache: "no-cache",
+        signal: AbortSignal.timeout(timeout),
+      };
+
+      this.fetch("/", params, false)
         .then(() => {
           this.status = "online";
+          const endTime = performance.now();
+          this.rtt = Math.round(endTime - startTime);
         })
         .catch(() => {
           this.status = "offline";
+          this.rtt = null; // Reset rtt on failure
         });
     },
   },
@@ -45,6 +91,8 @@ export default {
 .status {
   font-size: 0.8rem;
   color: var(--text-title);
+  white-space: nowrap;
+  margin-left: 0.25rem;
 
   &.online:before {
     background-color: #94e185;

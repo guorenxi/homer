@@ -1,10 +1,16 @@
 <template>
-  <div v-if="offline" class="offline-message">
-    <i class="far fa-dizzy"></i>
+  <div v-if="offline" class="offline-message mb-4">
+    <i class="fa-solid fa-triangle-exclamation"></i>
     <h1>
-      You're offline friend.
+      Network unreachable
       <span @click="checkOffline"> <i class="fas fa-redo-alt"></i></span>
     </h1>
+    <p>
+      <a
+        href="https://github.com/bastienwirtz/homer/blob/main/docs/configuration.md#connectivity-checks"
+        >More information →</a
+      >
+    </p>
   </div>
 </template>
 
@@ -30,21 +36,21 @@ export default {
           that.checkOffline();
         }
       },
-      false
+      false,
     );
     window.addEventListener(
       "online",
       function () {
         that.checkOffline();
       },
-      false
+      false,
     );
     window.addEventListener(
       "offline",
       function () {
         this.offline = true;
       },
-      false
+      false,
     );
   },
   methods: {
@@ -56,7 +62,10 @@ export default {
 
       // extra check to make sure we're not offline
       let that = this;
-      const aliveCheckUrl = window.location.href + "?t=" + new Date().valueOf();
+      const urlPath = window.location.pathname.replace(/\/+$/, "");
+      const aliveCheckUrl = `${
+        window.location.origin
+      }${urlPath}/index.html?t=${new Date().valueOf()}`;
       return fetch(aliveCheckUrl, {
         method: "HEAD",
         cache: "no-store",

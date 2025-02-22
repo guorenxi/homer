@@ -1,5 +1,8 @@
 <template>
-  <a v-on:click="toggleSetting()" class="navbar-item is-inline-block-mobile">
+  <a
+    class="navbar-item is-inline-block-mobile"
+    @click.prevent="toggleSetting()"
+  >
     <span><i :class="['fas', 'fa-fw', value ? icon : secondaryIcon]"></i></span>
     <slot></slot>
   </a>
@@ -14,6 +17,7 @@ export default {
     iconAlt: String,
     defaultValue: Boolean,
   },
+  emits: ["updated"],
   data: function () {
     return {
       secondaryIcon: null,
